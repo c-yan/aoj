@@ -11,7 +11,7 @@ class RangeUpdateSegmentTree:
         self._data = [(-1, 0)] * (t * 2 - 1)
         self._counter = 0
 
-    def update(self, start, stop, x):
+    def range_update(self, start, stop, x):
         data = self._data
         counter = self._counter
         l = start + self._offset
@@ -25,13 +25,13 @@ class RangeUpdateSegmentTree:
             r = (r - 1) // 2
         self._counter += 1
 
-    def find(self, i):
+    def __getitem__(self, key):
         data = self._data
-        j = i + self._offset
-        t = data[j]
-        while j > 0:
-            j = (j - 1) // 2
-            t = max(t, data[j])
+        i = key + self._offset
+        t = data[i]
+        while i > 0:
+            i = (i - 1) // 2
+            t = max(t, data[i])
         return t[1]
 
 
@@ -40,14 +40,14 @@ readline = stdin.readline
 n, q = map(int, readline().split())
 
 st = RangeUpdateSegmentTree(n)
-st.update(0, n, 2 ** 31 - 1)
+st.range_update(0, n, 2 ** 31 - 1)
 result = []
 for _ in range(q):
     query = readline()
     if query[0] == '0':
         _, s, t, x = map(int, query.split())
-        st.update(s, t + 1, x)
+        st.range_update(s, t + 1, x)
     elif query[0] == '1':
         _, i = map(int, query.split())
-        result.append(st.find(i))
+        result.append(st[i])
 print(*result, sep='\n')

@@ -10,7 +10,7 @@ class RangeAddSegmentTree:
         self._offset = t - 1
         self._data = [0] * (t * 2 - 1)
 
-    def add(self, start, stop, x):
+    def range_add(self, start, stop, x):
         data = self._data
         l = start + self._offset
         r = stop + self._offset
@@ -22,13 +22,13 @@ class RangeAddSegmentTree:
             l = l // 2
             r = (r - 1) // 2
 
-    def get(self, i):
+    def __getitem__(self, key):
         data = self._data
-        j = i + self._offset
-        result = data[j]
-        while j > 0:
-            j = (j - 1) // 2
-            result += data[j]
+        i = key + self._offset
+        result = data[i]
+        while i > 0:
+            i = (i - 1) // 2
+            result += data[i]
         return result
 
 
@@ -42,8 +42,8 @@ for _ in range(q):
     query = readline()
     if query[0] == '0':
         _, s, t, x = map(int, query.split())
-        st.add(s - 1, t, x)
+        st.range_add(s - 1, t, x)
     elif query[0] == '1':
         _, t = map(int, query.split())
-        result.append(st.get(t - 1))
+        result.append(st[t - 1])
 print(*result, sep='\n')
