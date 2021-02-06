@@ -55,94 +55,64 @@ func (st segmentTree) build(a []int) {
 	}
 }
 
-func (st segmentTree) propagateTo(index int, value int) {
-	st.lazy[index] += value
-	st.values[index] += value
-}
-
-func (st segmentTree) propagateAt(index int) {
-	if index != 0 {
-		st.propagateAt(st.getParentIndex(index))
-	}
-	if st.lazy[index] == defaultLazy {
-		return
-	}
-	st.propagateTo(index*2+1, st.lazy[index])
-	st.propagateTo(index*2+2, st.lazy[index])
-	st.lazy[index] = defaultLazy
-}
-
-func (st segmentTree) recalcAt(index int) {
-	st.values[index] = op(st.values[index*2+1], st.values[index*2+2])
-	if index != 0 {
-		st.recalcAt(st.getParentIndex(index))
-	}
-}
-
-func (st segmentTree) applyAt(index int, value int) {
-	st.lazy[index] += value
-	st.values[index] += value
-	if index != 0 {
-		st.recalcAt(st.getParentIndex(index))
-	}
-}
-
-func (st segmentTree) getParentIndex(index int) int {
-	if index < 1 {
-		panic("BUG: doesn't exists parent of 0")
-	}
-	return (index - 1) / 2
-}
-
-func (st segmentTree) propagate(start, stop int) {
+func (st segmentTree) segments(start, stop int) []int {
+	result := make([]int, 0, 20)
 	l := start + st.offset
 	r := stop + st.offset
 	for l < r {
 		if l&1 == 0 {
-			if l != 0 {
-				st.propagateAt(st.getParentIndex(l))
-			}
+			result = append(result, l)
 		}
 		if r&1 == 0 {
-			if r-1 != 0 {
-				st.propagateAt(st.getParentIndex(r - 1))
-			}
+			result = append(result, r-1)
 		}
 		l = l / 2
 		r = (r - 1) / 2
+	}
+	return result
+}
+
+func (st segmentTree) propagate(segments []int) {
+	for _, i := range segments {
+		indexes := make([]int, 0, 20)
+		for i != 0 {
+			i = (i - 1) / 2
+			indexes = append(indexes, i)
+		}
+		for len(indexes) != 0 {
+			j := indexes[len(indexes)-1]
+			indexes = indexes[:len(indexes)-1]
+			if st.lazy[j] == defaultLazy {
+				continue
+			}
+			st.lazy[j*2+1] += st.lazy[j]
+			st.values[j*2+1] += st.lazy[j]
+			st.lazy[j*2+2] += st.lazy[j]
+			st.values[j*2+2] += st.lazy[j]
+			st.lazy[j] = defaultLazy
+		}
 	}
 }
 
 func (st segmentTree) apply(start, stop int, value int) {
-	st.propagate(start, stop)
-	l := start + st.offset
-	r := stop + st.offset
-	for l < r {
-		if l&1 == 0 {
-			st.applyAt(l, value)
+	segments := st.segments(start, stop)
+	st.propagate(segments)
+	for _, i := range segments {
+		st.lazy[i] += value
+		st.values[i] += value
+		for i != 0 {
+			i = (i - 1) / 2
+			st.values[i] = op(st.values[i*2+1], st.values[i*2+2])
 		}
-		if r&1 == 0 {
-			st.applyAt(r-1, value)
-		}
-		l = l / 2
-		r = (r - 1) / 2
 	}
 }
 
 func (st segmentTree) query(start, stop int) int {
-	st.propagate(start, stop)
+	segments := st.segments(start, stop)
+	st.propagate(segments)
 	result := defaultValue
-	l := start + st.offset
-	r := stop + st.offset
-	for l < r {
-		if l&1 == 0 {
-			result = op(result, st.values[l])
-		}
-		if r&1 == 0 {
-			result = op(result, st.values[r-1])
-		}
-		l = l / 2
-		r = (r - 1) / 2
+	for _, i := range segments {
+		result = op(result, st.values[i])
 	}
 	return result
 }
