@@ -56,20 +56,25 @@ func (st segmentTree) build(a []int) {
 }
 
 func (st segmentTree) segments(start, stop int) []int {
-	result := make([]int, 0, 20)
+	ls := make([]int, 0, 32)
+	rs := make([]int, 0, 16)
 	l := start + st.offset
 	r := stop + st.offset
 	for l < r {
 		if l&1 == 0 {
-			result = append(result, l)
+			ls = append(ls, l)
 		}
 		if r&1 == 0 {
-			result = append(result, r-1)
+			rs = append(rs, r-1)
 		}
 		l = l / 2
 		r = (r - 1) / 2
 	}
-	return result
+	for i := 0; i < len(rs)/2; i++ {
+		j := len(rs) - 1 - i
+		rs[i], rs[j] = rs[j], rs[i]
+	}
+	return append(ls, rs...)
 }
 
 func (st segmentTree) propagate(segments []int) {
@@ -79,17 +84,16 @@ func (st segmentTree) propagate(segments []int) {
 			i = (i - 1) / 2
 			indexes = append(indexes, i)
 		}
-		for len(indexes) != 0 {
-			j := indexes[len(indexes)-1]
-			indexes = indexes[:len(indexes)-1]
-			if st.lazy[j] == defaultLazy {
+		for j := len(indexes) - 1; j >= 0; j-- {
+			k := indexes[j]
+			if st.lazy[k] == defaultLazy {
 				continue
 			}
-			st.lazy[j*2+1] += st.lazy[j]
-			st.values[j*2+1] += st.lazy[j]
-			st.lazy[j*2+2] += st.lazy[j]
-			st.values[j*2+2] += st.lazy[j]
-			st.lazy[j] = defaultLazy
+			st.lazy[k*2+1] += st.lazy[k]
+			st.values[k*2+1] += st.lazy[k]
+			st.lazy[k*2+2] += st.lazy[k]
+			st.values[k*2+2] += st.lazy[k]
+			st.lazy[k] = defaultLazy
 		}
 	}
 }
